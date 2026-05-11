@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 import argparse
+import os
 from pathlib import Path
+import shutil
 from typing import Literal
 import sys
 
@@ -61,7 +63,9 @@ def main(args: argparse.Namespace) -> Literal[0]:
     passwords: list[str] = next(reader)  # NOTE: passwords.csv should be a single, continuous line
 
     print(input_directory)
-    # 1. Extract the folders, using the password file when needed
+    # 1. Extract the folders, using the password file when needed.
+
+    # TODO: check if parent folder name is the same as parent folder. If so, then flatten the directory.
     for child in input_directory.iterdir():
 
         # Skip folders
@@ -76,7 +80,7 @@ def main(args: argparse.Namespace) -> Literal[0]:
         for password in passwords:
             try:
                 logging.info("Trying password %s", password)
-                patoolib.extract_archive(archive=child_str, verbosity=1, outdir=str(
+                patoolib.extract_archive(archive=child_str, verbosity=0, outdir=str(
                     input_directory / "tmp" / child.stem), interactive=False, password=password)
                 break
             except Exception as e:
@@ -94,12 +98,39 @@ def main(args: argparse.Namespace) -> Literal[0]:
     # TODO: try from a list of passwords that are from a read-in JSON file (rather than having
     #       them hard-coded)
     temp_directory: Path = input_directory / "tmp"
-    for child in temp_directory.iterdir():
+    # FIX: deal with case where there might be MULTIPLE folders inside an unarchived folder
+    for parent_folder in temp_directory.iterdir():
         """
         Now, go through and look at the metadata of the folders, performing checks and whatnot, 
         flattening structures, etc...
-
         """
+
+        # Compare foldernames of child to that of parent. If parent is good, then inherit its filename
+        # Else, inherit child foldername.
+        # TODO: call function that makes comparison as to whether or not which foldername to accept
+        # this helper returns a boolean and is designed so that its contents functionally can change, but in
+        # the end, it must return a boolean.
+        # boolean decides which name to accept?
+        # And perhaps provides metadata stuff for us.
+
+        # TODO: also, build out a database of album artists, album names, and other music metadata.
+        # That is, album-wide metadata (and not track-based metadata).
+        # That way, we can assign our exstracted metadata from foldernames onto the ID3 metadata
+        #   itself.
+        # This is using standard ID3 fields and NOT custom ID3 fields as to be maximally compatible
+        #   with various music players/libraries.
+        parent_folder_name: str = parent_folder.stem
+        print(parent_folder_name)
+        print(os.listdir(parent_folder))
+
+        for sub_folder_name in os.listdir(parent_folder):
+            sub_folder: Path = parent_folder / sub_folder_name
+            print(sub_folder)
+            print(sub_folder.is_file())
+
+            # Finhd the first subfolder we know about
+            if sub_folder.is_dir() and (len(sub_folder.stem) > len(parent_folder.stem)):
+                shutil.move(sub_folder, parent_folder)
 
     return 0
 
