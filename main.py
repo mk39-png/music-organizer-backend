@@ -28,12 +28,6 @@ logging.basicConfig(
 )
 
 
-def unzip_file():
-    """
-    Performs file unzipping with redirecting STDOUT to logging file if specified.
-    """
-
-
 def main(args: argparse.Namespace) -> Literal[0]:
     """
     Views files and folders in a chosen directory.
@@ -66,18 +60,27 @@ def main(args: argparse.Namespace) -> Literal[0]:
     reader = csv.reader(passwords_file)
     passwords: list[str] = next(reader)  # NOTE: passwords.csv should be a single, continuous line
 
+    print(input_directory)
     # 1. Extract the folders, using the password file when needed
     for child in input_directory.iterdir():
+
+        # Skip folders
+        if not child.is_file():
+            continue
+
         print(child.stem)
         child_str = str(child)
 
-        # patoolib.list_archive(child_str)
-        # cont = input("Yay or nay?")
-        try:
-            patoolib.extract_archive(child_str, verbosity=1, outdir=str(
-                input_directory / "tmp"), interactive=False)
-        except:
-            logging.error("Looping through passwords now... retrying")
+        # Wait, could forcefully use a password loop, with break after extract_archive
+        # to exit the loop of passwords early  (avoiding complex recursion or tracking)
+        for password in passwords:
+            try:
+                logging.info("Trying password %s", password)
+                patoolib.extract_archive(archive=child_str, verbosity=1, outdir=str(
+                    input_directory / "tmp" / child.stem), interactive=False, password=password)
+                break
+            except Exception as e:
+                logging.error("failed force usage of password, continue with next password %s", e)
 
     #
     # PART 2. HANDLING NESTED FOLDERS
@@ -90,6 +93,13 @@ def main(args: argparse.Namespace) -> Literal[0]:
     # 3. handle encrypted files by moving them to a "rejected" folder... or leaving them as is.
     # TODO: try from a list of passwords that are from a read-in JSON file (rather than having
     #       them hard-coded)
+    temp_directory: Path = input_directory / "tmp"
+    for child in temp_directory.iterdir():
+        """
+        Now, go through and look at the metadata of the folders, performing checks and whatnot, 
+        flattening structures, etc...
+
+        """
 
     return 0
 
