@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+
+# GOAL: with this script, the music unarchiving process is automated and reduces the need to
+#       manually go through each archived file and extract metadata and many other chores.
+
 import argparse
 import os
 from pathlib import Path
@@ -28,6 +32,16 @@ logging.basicConfig(
         logging.FileHandler(log_filepath, mode="w"),  # Overwriting runs
     ]
 )
+
+
+def get_entries(directory: Path) -> list[Path]:
+    """Get entries within a given directory. 
+
+    :param directory: given directory to check
+    :type directory: Path
+    :return: list of entries within a directory. Includes child files and child directories.
+    :rtype: list[Path]
+    """
 
 
 def main(args: argparse.Namespace) -> Literal[0]:
@@ -63,8 +77,8 @@ def main(args: argparse.Namespace) -> Literal[0]:
     passwords: list[str] = next(reader)  # NOTE: passwords.csv should be a single, continuous line
 
     print(input_directory)
-    # 1. Extract the folders, using the password file when needed.
 
+    # 1. Extract the folders, using the password file when needed.
     # TODO: check if parent folder name is the same as parent folder. If so, then flatten the directory.
     for child in input_directory.iterdir():
 
@@ -80,8 +94,13 @@ def main(args: argparse.Namespace) -> Literal[0]:
         for password in passwords:
             try:
                 logging.info("Trying password %s", password)
-                patoolib.extract_archive(archive=child_str, verbosity=0, outdir=str(
+                patoolib.extract_archive(archive=child_str, verbosity=1, outdir=str(
                     input_directory / "tmp" / child.stem), interactive=False, password=password)
+
+                # TODO: could make a STDOUT parser in the future that parses the contents of
+                #       the archived file and operates with that as an optimization
+                # patoolib.list_archive(archive=child_str, verbosity=1,
+                #                       interactive=False, password=password)
                 break
             except Exception as e:
                 logging.error("failed force usage of password, continue with next password %s", e)
@@ -97,46 +116,86 @@ def main(args: argparse.Namespace) -> Literal[0]:
     # 3. handle encrypted files by moving them to a "rejected" folder... or leaving them as is.
     # TODO: try from a list of passwords that are from a read-in JSON file (rather than having
     #       them hard-coded)
+
+    # NOTE: I know the base directory is in tmp, but it's much easier to work with for now.
     temp_directory: Path = input_directory / "tmp"
+    # NOTE: it's much easier to then put out results here
+    results_directory: Path = input_directory / "results"
+
     # FIX: deal with case where there might be MULTIPLE folders inside an unarchived folder
-    for parent_folder in temp_directory.iterdir():
-        """
-        Now, go through and look at the metadata of the folders, performing checks and whatnot, 
-        flattening structures, etc...
-        """
+    for parent_directory in temp_directory.iterdir():
+        parent_directory_name = parent_directory.stem
+        # NOTE: make any UX modular so that we can plug in some GUI and it'd work fine without major retooling/code reworking
 
-        # Compare foldernames of child to that of parent. If parent is good, then inherit its filename
-        # Else, inherit child foldername.
-        # TODO: call function that makes comparison as to whether or not which foldername to accept
-        # this helper returns a boolean and is designed so that its contents functionally can change, but in
-        # the end, it must return a boolean.
-        # boolean decides which name to accept?
-        # And perhaps provides metadata stuff for us.
+        # This should deal with a majority of albums.
+        # Anything else would be an outlier, but they should be a lot less than the majority of the files.
 
-        # TODO: also, build out a database of album artists, album names, and other music metadata.
-        # That is, album-wide metadata (and not track-based metadata).
-        # That way, we can assign our exstracted metadata from foldernames onto the ID3 metadata
-        #   itself.
-        # This is using standard ID3 fields and NOT custom ID3 fields as to be maximally compatible
-        #   with various music players/libraries.
-        parent_folder_name: str = parent_folder.stem
-        print(parent_folder_name)
-        print(os.listdir(parent_folder))
+        # Simple counter to see if we have more than 1 child directory
+        child_entries: list[Path] = [
+            child_entry for child_entry in parent_directory.iterdir() if child_entry.is_dir()]
+        num_child_directories: int = len(child_entries)
 
-        for sub_folder_name in os.listdir(parent_folder):
-            sub_folder: Path = parent_folder / sub_folder_name
-            print(sub_folder)
-            print(sub_folder.is_file())
+        child_entry_names: list[str] = os.listdir(parent_directory)
 
-            # Finhd the first subfolder we know about
-            if sub_folder.is_dir() and (len(sub_folder.stem) > len(parent_folder.stem)):
-                shutil.move(sub_folder, parent_folder)
+        # 0. ignore any folders with multiple subfolders (e.g. multi-CD sets)
+        #    or maybe flatten the structure of multiple CD sets
+
+        # 1. move any files into the folder at the same level
+
+        # 2. decide on foldername and which one to keep
+
+        # 3. extract metadata from folder name
+
+        # 4. store metadata into some local database
+
+        print("parent directory name: ", parent_directory.stem)
+        print("parent directory: ", parent_directory)
+        print("entries are the following: ", child_entry_names)
+
+        # IF MULTIPLE CHILD DIRECTORIES, THEN SKIP
+
+        for child_entry_name in child_entry_names:
+
+            child_entry: Path = parent_directory / child_entry_name
+
+            # TODO: for now, operate in the land of filenames
+            # Then, when done comparing filenames and whatnot, then create the path
+            # Because when we start working with paths right now, then things get super messy.
+            # if child entry is the same name as the parent directory (meaning)
+            print("child entry name: ", child_entry_name)
+            print("child entry: ", child_entry)
+            print(child_entry.is_file())
+
+            # 1. check if there are other non-directory entries.
+            # TODO: make a function that handles subfolders...
+            # Or rather, given
+
+            exit(67)
+
+            # TODO: deal with case where entry is the same name as the parent...
+            # But that would mean recursively moving contents of child directory to parent directory
+
+            # Handle case where child directory has the same name as the parent directory.
+            # In this case, we would have to run the script twice... or something like that.
+
+            # TODO: move stuff from parent folder into new folder!
+            if child_entry.is_dir() and (len(child_entry.stem) >= len(parent_directory.stem)):
+                # TODO: rename parent entry and move the child entry to same level as parent...
+                # OR move child entry to same level as parent and then remove the child entry directory
+
+                # NOTE: can't move something up if it already exists... which means we need to rename the parent folder as that of the sub folder and move its contents upwards.
+                shutil.move(child_entry, results_directory / child_entry_name)
+
+                # Remove after moving folders
+                # shutil.rmtree(parent_directory)
+                print("Moving ", parent_directory)
+            else:
+                shutil.move(child_entry, results_directory / child_entry_name)
 
     return 0
 
 
 if __name__ == '__main__':
-
     parser = argparse.ArgumentParser(
         prog="music-organizer",
         description="Given a folderpath, view compressed files contents and see if parent folder "
