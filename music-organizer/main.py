@@ -92,8 +92,13 @@ def main(args: argparse.Namespace) -> Literal[0]:
         ]
         num_album_dir: int = len(sub_album_dir)
         album_folder_names: list[str] = os.listdir(album_dir)
+<<<<<<< Updated upstream
         print("Sub-albums are the following are the following: ", album_folder_names)
         print("Album dir is this: ", album_dir)
+=======
+        logging.info("Sub-albums are the following are the following: %s", album_folder_names)
+        logging.info("Album dir is this: %s", album_dir)
+>>>>>>> Stashed changes
 
         # 0. ignore any folders with multiple subfolders (e.g. multi-CD sets)
         #    or maybe flatten the structure of multiple CD sets
