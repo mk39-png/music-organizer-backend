@@ -25,7 +25,7 @@ def extract(file_src_dir: Path, passwords: list[str], settings: Settings) -> Non
     # As in, leave it alone.
     if os.path.isdir(file_src_dir):
         # TODO: use log instead...
-        print(f"Directory {file_src_dir} is not a file!")
+        logging.info("Directory %s is not a file!", file_src_dir)
         return
 
     # Wait, could forcefully use a password loop, with break after extract_archive
@@ -39,7 +39,7 @@ def extract(file_src_dir: Path, passwords: list[str], settings: Settings) -> Non
 
             # TODO: if it already exists, then DO NOT EXTRACT IT AGAIN!
             if file_out_dir.exists():
-                print(f"{file_out_dir} already exists in temp/!")
+                logging.info("%s already exists in temp/!", file_out_dir)
                 break
 
             patoolib.extract_archive(

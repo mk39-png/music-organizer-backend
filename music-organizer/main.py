@@ -29,7 +29,7 @@ logging.basicConfig(
     level=logging.NOTSET,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.FileHandler(log_filepath, mode="w"),  # Overwriting runs
+        logging.FileHandler(log_filepath, mode="w", encoding="utf-8"),  # Overwriting runs
     ]
 )
 
@@ -92,9 +92,9 @@ def main(args: argparse.Namespace) -> Literal[0]:
         ]
         num_album_dir: int = len(sub_album_dir)
         album_folder_names: list[str] = os.listdir(album_dir)
-        print("Sub-albums are the following are the following: ", album_folder_names)
-        print("Album dir is this: ", album_dir)
 
+        logging.info("Sub directories are the following are the following: %s ", album_folder_names)
+        logging.info("Album dir is this: %s", album_dir)
         # 0. ignore any folders with multiple subfolders (e.g. multi-CD sets)
         #    or maybe flatten the structure of multiple CD sets
         # 1. move any files into the folder at the same level
