@@ -29,7 +29,7 @@ logging.basicConfig(
     level=logging.NOTSET,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.FileHandler(log_filepath, mode="w"),  # Overwriting runs
+        logging.FileHandler(log_filepath, mode="w", encoding="utf-8"),  # Overwriting runs
     ]
 )
 
