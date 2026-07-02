@@ -2,4 +2,5 @@ test/
 logs/
 .vscode/
 .venv/
+__pycache__/
 *.ps1
