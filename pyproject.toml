@@ -1,0 +1,14 @@
+[project]
+name = "music-organizer"
+version = "0.0.1"
+description = "Python-based extractor and parser of archived music folders."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["py7zr >= 1.1.0", "mutagen >= 1.47.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+music-organizer = "music-organizer.main:main"
